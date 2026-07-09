@@ -23,10 +23,34 @@ const createRoom = async (userId, roomData) => {
   return room.populate("createdBy", "name email");
 };
 
-const getAllRooms = async () => {
-  return StudyRoom.find({ status: "active" })
+const getAllRooms = async (search, page, limit) => {
+  const query = {
+    status: "active",
+  };
+
+  if (search) {
+    query.name = {
+      $regex: search,
+      $options: "i",
+    };
+  }
+
+  const skip = (page - 1) * limit;
+
+  const rooms = await StudyRoom.find(query)
     .populate("createdBy", "name email")
-    .sort({ createdAt: -1 });
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit);
+
+  const totalRooms = await StudyRoom.countDocuments(query);
+
+  return {
+    rooms,
+    totalRooms,
+    currentPage: page,
+    totalPages: Math.ceil(totalRooms / limit),
+  };
 };
 
 const getRoomById = async (roomId) => {

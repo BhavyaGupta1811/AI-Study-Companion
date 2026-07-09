@@ -1,0 +1,50 @@
+PROJECT 2/ 
+├── server/ 
+| ├── node_modules/ 
+| ├── src/  
+| ├── config/ 
+| │   └──db.js 
+| │ ├── controllers/ 
+| │ │ ├── authController.js 
+| │ │ ├── dashboardController.js 
+| │ │ ├── messageController.js 
+| │ │ ├── studyRoomController.js 
+| │ │ ├── studySessionController.js 
+| │ │ └── userController.js 
+| │ ├── middleware/ 
+| │ │ ├── authMiddleware.js 
+| │ │ ├── errorMiddleware.js 
+| │ │ └── validate.js 
+| │ ├── models/ 
+| │ │ ├── Message.js
+| │ │ ├── StudyRoom.js 
+| │ │ ├── StudySession.js 
+| │ │ └── User.js 
+| │ ├── routes/ 
+| │ │ ├── authRoutes.js 
+| │ │ ├── dashboardRoutes.js 
+| │ │ ├── messageRoutes.js 
+| │ │ ├── studyRoomRoutes.js 
+| | │ ├── studySessionRoutes.js 
+| │ │ └── userRoutes.js 
+| │ ├── services/ 
+| │ │ ├── authService.js 
+| │ │ ├── dashboardService.js 
+| │ │ ├── messageService.js 
+| │ │ ├── studyRoomService.js 
+| │ │ ├── studySessionService.js 
+| │ │ └── userService.js 
+| │ ├── utils/ 
+| │ │ ├── generateJoinCode.js 
+| │ │ └── moderateMessage.js 
+| │ ├── validators/ 
+| │ │ ├── authValidator.js 
+| │ │ ├── messageValidator.js 
+| │ │ ├── studyRoomValidator.js 
+| │ │ └── userValidator.js 
+| │ ├── app.js 
+| │ └── server.js 
+| ├── .env 
+| ├── .gitignore
+| ├── package.json 
+| └── package-lock.json
