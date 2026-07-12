@@ -1,0 +1,16 @@
+.dashboard {
+  min-height: calc(100vh - 72px);
+  padding: 35px 8%;
+  background-color: #0f172a;
+  color: white;
+}
+
+.dashboard-header h1 {
+  font-size: 36px;
+  margin-bottom: 8px;
+}
+
+.dashboard-header p {
+  color: #94a3b8;
+  font-size: 16px;
+}
