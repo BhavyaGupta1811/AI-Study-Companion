@@ -26,9 +26,9 @@ backend/
 │   ├── utils/
 │   │   └── moderateMessage.js
 │   ├── validators/
-│   │   ├── authValidation.js
-│   │   ├── messageValidation.js
-│   │   └── userValidation.js
+│   │   ├── authValidator.js
+│   │   ├── messageValidator.js
+│   │   └── userValidator.js
 │   ├── app.js
 │   └── server.js
 ├── .env

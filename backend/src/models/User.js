@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const crypto = require("crypto");
 const userSchema = new mongoose.Schema(
   {
     name: {
@@ -34,7 +35,6 @@ const userSchema = new mongoose.Schema(
       ref: "User",
       default: null,
     },
-    
 
     profilePicture: {
       type: String,
@@ -91,10 +91,21 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    partnerCode: {
+      type: String,
+      unique: true,
+    },
   },
   {
     timestamps: true,
   },
 );
+userSchema.pre("save", function (next) {
+  if (!this.partnerCode) {
+    this.partnerCode =
+      "FF-" + crypto.randomBytes(3).toString("hex").toUpperCase();
+  }
 
+  next();
+});
 module.exports = mongoose.model("User", userSchema);

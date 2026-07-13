@@ -7,11 +7,14 @@ const {
   endStudySession,
   getStudySessions,
   getStudySession,
+  getActiveStudySession,
 } = require("../controllers/studySessionController");
 
 const router = express.Router();
 
 router.get("/", protect, getStudySessions);
+
+router.get("/active", protect, getActiveStudySession);
 
 router.get("/:sessionId", protect, getStudySession);
 

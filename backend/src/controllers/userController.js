@@ -26,6 +26,59 @@ const getUserProfile = async (req, res) => {
   }
 };
 
+const connectPartner = async (req, res) => {
+  try {
+    const { partnerCode } = req.body;
+
+    if (!partnerCode) {
+      return res.status(400).json({
+        success: false,
+        message: "Partner code is required",
+      });
+    }
+
+    const currentUser = await User.findById(req.user._id);
+
+    const partner = await User.findOne({
+      partnerCode: partnerCode.toUpperCase(),
+    });
+
+    if (!partner) {
+      return res.status(404).json({
+        success: false,
+        message: "Partner not found",
+      });
+    }
+
+    if (partner._id.toString() === currentUser._id.toString()) {
+      return res.status(400).json({
+        success: false,
+        message: "You cannot connect with yourself",
+      });
+    }
+
+    currentUser.accountabilityPartner = partner._id;
+
+    await currentUser.save();
+
+    await currentUser.populate(
+      "accountabilityPartner",
+      "name email profilePicture partnerCode",
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Partner connected successfully",
+      user: currentUser,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 // Update logged-in user's profile
 const updateUserProfile = async (req, res) => {
   try {
@@ -128,9 +181,9 @@ const deleteUserAccount = async (req, res) => {
     });
   }
 };
-
 module.exports = {
   getUserProfile,
   updateUserProfile,
   deleteUserAccount,
+  connectPartner,
 };

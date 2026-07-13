@@ -7,6 +7,7 @@ const {
   getUserProfile,
   updateUserProfile,
   deleteUserAccount,
+  connectPartner,
 } = require("../controllers/userController");
 
 const { updateProfileValidator } = require("../validators/userValidator");
@@ -22,6 +23,8 @@ router.put(
   validate,
   updateUserProfile,
 );
+
+router.post("/connect-partner", protect, connectPartner);
 
 router.delete("/profile", protect, deleteUserAccount);
 

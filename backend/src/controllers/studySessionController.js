@@ -50,8 +50,9 @@ const endStudySession = async (req, res) => {
 
     session.endTime = new Date();
 
-    session.duration = Math.floor(
-      (session.endTime - session.startTime) / (1000 * 60),
+    session.duration = Math.max(
+      1,
+      Math.floor((session.endTime - session.startTime) / (1000 * 60)),
     );
 
     session.status = "completed";
@@ -131,10 +132,36 @@ const getStudySession = async (req, res) => {
     });
   }
 };
+const getActiveStudySession = async (req, res) => {
+  try {
+    const session = await StudySession.findOne({
+      user: req.user._id,
+      status: "active",
+    });
+
+    if (!session) {
+      return res.status(404).json({
+        success: false,
+        message: "No active study session",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      session,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 
 module.exports = {
   startStudySession,
   endStudySession,
   getStudySessions,
   getStudySession,
+  getActiveStudySession,
 };
