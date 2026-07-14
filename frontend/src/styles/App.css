@@ -1,11 +1,29 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
 }
 
 body{
-    margin:0;
-    font-family:"Poppins",sans-serif;
-    background:#F8FAFC;
+background:#0f172a;
+overflow-x:hidden;
+}
+
+#root{
+min-height:100vh;
+}
+
+.app-content{
+margin-left:260px;
+min-height:100vh;
+transition:.35s;
+}
+
+@media(max-width:768px){
+
+.app-content{
+margin-left:0;
+padding-top:80px;
+}
+
 }

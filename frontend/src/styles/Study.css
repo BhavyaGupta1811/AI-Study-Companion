@@ -1,6 +1,6 @@
 .study-page {
   min-height: calc(100vh - 72px);
-  padding: 40px 8%;
+  padding: 40px;
   background: #0f172a;
 }
 
@@ -173,3 +173,74 @@
   border-color: #6366f1;
   box-shadow: 0 0 15px rgba(99, 102, 241, 0.25);
 }
+
+/* ---------- Analytics ---------- */
+
+.analytics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 22px;
+  margin-bottom: 35px;
+}
+
+.analytics-card {
+  padding: 24px;
+  border-radius: 18px;
+  background: rgba(30, 41, 59, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.3s ease;
+  backdrop-filter: blur(18px);
+}
+
+.analytics-card:hover {
+  transform: translateY(-5px);
+  border-color: #6366f1;
+  box-shadow: 0 18px 35px rgba(99, 102, 241, 0.18);
+}
+
+.analytics-card h3 {
+  font-size: 32px;
+  color: white;
+  margin-bottom: 10px;
+}
+
+.analytics-card p {
+  color: #94a3b8;
+  font-size: 15px;
+}
+@keyframes pulseCard {
+  0% {
+    box-shadow: 0 0 0 rgba(99, 102, 241, 0.35);
+  }
+
+  50% {
+    box-shadow: 0 0 28px rgba(99, 102, 241, 0.45);
+  }
+
+  100% {
+    box-shadow: 0 0 0 rgba(99, 102, 241, 0.35);
+  }
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 768px) {
+  .study-page {
+    padding: 24px 18px;
+  }
+
+  .study-filters {
+    flex-wrap: wrap;
+  }
+
+  .study-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 18px;
+  }
+
+  .analytics-card h3 {
+    font-size: 26px;
+  }
+}
+

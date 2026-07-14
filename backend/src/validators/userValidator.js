@@ -38,7 +38,7 @@ const updateProfileValidator = [
 
   body("dailyStudyTarget")
     .optional()
-    .isInt({ min: 1, max: 24 })
+    .isFloat({ min: 1, max: 24 })
     .withMessage("Daily study target must be between 1 and 24"),
 
   body("profilePicture").optional().trim(),

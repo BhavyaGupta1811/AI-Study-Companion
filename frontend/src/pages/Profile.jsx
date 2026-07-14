@@ -4,13 +4,24 @@ import { toast } from "react-toastify";
 import api from "../services/api";
 import { formatName } from "../utils/formatName";
 import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
+
 import "../styles/Profile.css";
 
 function Profile() {
+  const { setUser: setAuthUser } = useAuth(); 
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const [showModal, setShowModal] = useState(false);
+
+  const [saving, setSaving] = useState(false);
+  const [connecting, setConnecting] = useState(false);
+
+  const [partnerCode, setPartnerCode] = useState("");
+
+  const [showPartnerCode, setShowPartnerCode] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -20,39 +31,39 @@ function Profile() {
     year: "",
     studyGoal: "",
     dailyStudyTarget: "",
-    accountabilityPartner: "",
+    accountabilityPartners: [],
   });
-
-  const [saving, setSaving] = useState(false);
-  const [partnerCode, setPartnerCode] = useState("");
-  const [connecting, setConnecting] = useState(false);
-  const { setUser: setAuthUser } = useAuth();
 
   useEffect(() => {
     getProfile();
   }, []);
 
-  async function getProfile() {
+  const getProfile = async () => {
     try {
+      setLoading(true);
+
       const response = await api.get("/users/profile");
-      setUser(response.data.user);
+
+      const profile = response.data.user;
+
+      setUser(profile);
+
       setFormData({
-        name: response.data.user.name || "",
-        bio: response.data.user.bio || "",
-        college: response.data.user.college || "",
-        course: response.data.user.course || "",
-        year: response.data.user.year || "",
-        studyGoal: response.data.user.studyGoal || "",
-        dailyStudyTarget: response.data.user.dailyStudyTarget || "",
-        accountabilityPartner:
-          response.data.user.accountabilityPartner?._id || "",
+        name: profile.name || "",
+        bio: profile.bio || "",
+        college: profile.college || "",
+        course: profile.course || "",
+        year: profile.year || "",
+        studyGoal: profile.studyGoal || "",
+        dailyStudyTarget: profile.dailyStudyTarget || "",
+        accountabilityPartners: profile.accountabilityPartners || [],
       });
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to load profile");
+      toast.error(error.response?.data?.message || "Failed to load profile.");
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   if (loading) {
     return (
@@ -62,91 +73,132 @@ function Profile() {
     );
   }
 
-  function handleChange(e) {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+  if (!user) {
+    return (
+      <div className="profile-page">
+        <h2>Unable to load profile.</h2>
+      </div>
+    );
   }
 
-  async function saveProfile() {
+  const handleChange = ({ target }) => {
+    setFormData((prev) => ({
+      ...prev,
+      [target.name]: target.value,
+    }));
+  };
+
+  const saveProfile = async () => {
+    if (saving) return;
+
     try {
       setSaving(true);
 
       const dataToSend = {
         ...formData,
+        name: formData.name.trim(),
+        bio: formData.bio.trim(),
+        college: formData.college.trim(),
+        course: formData.course.trim(),
+        studyGoal: formData.studyGoal.trim(),
+        dailyStudyTarget: Number(formData.dailyStudyTarget),
       };
-
-      if (!dataToSend.accountabilityPartner) {
-        delete dataToSend.accountabilityPartner;
-      }
 
       if (!dataToSend.year) {
         delete dataToSend.year;
       }
 
       const response = await api.put("/users/profile", dataToSend);
-      toast.success(response.data.message);
 
-      setUser(response.data.user);
-      setAuthUser(response.data.user);
+      const updatedUser = response.data.user;
+
+      setUser(updatedUser);
+      setAuthUser(updatedUser);
+
       setFormData({
-        name: response.data.user.name || "",
-        bio: response.data.user.bio || "",
-        college: response.data.user.college || "",
-        course: response.data.user.course || "",
-        year: response.data.user.year || "",
-        studyGoal: response.data.user.studyGoal || "",
-        dailyStudyTarget: response.data.user.dailyStudyTarget || "",
-        accountabilityPartner:
-          response.data.user.accountabilityPartner?._id || "",
+        name: updatedUser.name || "",
+        bio: updatedUser.bio || "",
+        college: updatedUser.college || "",
+        course: updatedUser.course || "",
+        year: updatedUser.year || "",
+        studyGoal: updatedUser.studyGoal || "",
+        dailyStudyTarget: updatedUser.dailyStudyTarget || "",
+        accountabilityPartners: updatedUser.accountabilityPartners || [],
       });
+
+      toast.success(response.data.message);
 
       setShowModal(false);
     } catch (error) {
-      if (error.response?.data?.errors) {
+      if (error.response?.data?.errors?.length) {
         toast.error(error.response.data.errors[0].msg);
       } else {
         toast.error(
-          error.response?.data?.message || "Failed to update profile",
+          error.response?.data?.message || "Failed to update profile.",
         );
       }
     } finally {
       setSaving(false);
     }
-  }
+  };
 
-  async function connectPartner() {
-    if (!partnerCode.trim()) {
-      return toast.error("Enter a partner code");
+  const connectPartner = async () => {
+    if (connecting) return;
+
+    const code = partnerCode.trim().toUpperCase();
+
+    if (!code) {
+      return toast.error("Enter a partner code.");
     }
 
     try {
       setConnecting(true);
 
       const response = await api.post("/users/connect-partner", {
-        partnerCode,
+        partnerCode: code,
       });
-
-      toast.success(response.data.message);
 
       setUser(response.data.user);
       setAuthUser(response.data.user);
 
       setPartnerCode("");
+
+      toast.success(response.data.message);
     } catch (error) {
-      toast.error(error.response?.data?.message || "Connection failed");
+      toast.error(error.response?.data?.message || "Connection failed.");
     } finally {
       setConnecting(false);
     }
-  }
+  };
+
+  const disconnectPartner = async (partnerId) => {
+    try {
+      const response = await api.delete(
+        `/users/disconnect-partner/${partnerId}`,
+      );
+
+      setUser(response.data.user);
+      setAuthUser(response.data.user);
+
+      toast.success(response.data.message);
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Failed to disconnect partner.",
+      );
+    }
+  };
+
   return (
     <div className="profile-page">
       <div className="profile-card">
         <img
           src={user.profilePicture}
-          alt={user.name}
+          alt={`${user.name}'s profile`}
           className="profile-image"
+          onError={(e) => {
+            e.target.src =
+              "https://ik.imagekit.io/2gnckpnjs/ffa31224f6efb03a7156cfea05b9e5ab.jpg";
+          }}
         />
 
         <h1>{formatName(user.name)}</h1>
@@ -157,16 +209,36 @@ function Profile() {
           <span>Your Partner Code</span>
 
           <div className="partner-code-box">
-            <h2>{user.partnerCode}</h2>
+            <h2>
+              {showPartnerCode
+                ? user.partnerCode || "Not Generated"
+                : user.partnerCode
+                  ? user.partnerCode.replace(/.(?=.{4})/g, "*")
+                  : "Not Generated"}
+            </h2>
 
-            <button
-              onClick={() => {
-                navigator.clipboard.writeText(user.partnerCode);
-                toast.success("Partner code copied");
-              }}
-            >
-              Copy
-            </button>
+            <div className="partner-code-actions">
+              <button
+                type="button"
+                onClick={() => setShowPartnerCode((prev) => !prev)}
+              >
+                {showPartnerCode ? "Hide" : "Show"}
+              </button>
+
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(user.partnerCode);
+                    toast.success("Partner code copied.");
+                  } catch {
+                    toast.error("Unable to copy partner code.");
+                  }
+                }}
+              >
+                Copy
+              </button>
+            </div>
           </div>
         </div>
 
@@ -209,100 +281,187 @@ function Profile() {
                 type="text"
                 placeholder="Enter Partner Code"
                 value={partnerCode}
+                maxLength={9}
+                disabled={connecting}
                 onChange={(e) => setPartnerCode(e.target.value.toUpperCase())}
               />
 
-              <button onClick={connectPartner} disabled={connecting}>
+              <button
+                type="button"
+                onClick={connectPartner}
+                disabled={connecting}
+              >
                 {connecting ? "Connecting..." : "Connect"}
               </button>
             </div>
 
             <div className="connected-partner">
-              <span>Connected Partner</span>
+              <span>Connected Partners</span>
 
-              <h2>
-                {user.accountabilityPartner
-                  ? formatName(user.accountabilityPartner.name)
-                  : "Not Connected"}
-              </h2>
+              {!user.accountabilityPartners?.length ? (
+                <h2>Not Connected</h2>
+              ) : (
+                user.accountabilityPartners.map((partner) => (
+                  <div key={partner._id} className="partner-item">
+                    <div>
+                      <h3>{formatName(partner.name)}</h3>
+                      <p>{partner.email}</p>
+                    </div>
 
-              {user.accountabilityPartner && (
-                <p>{user.accountabilityPartner.email}</p>
+                    <div className="partner-actions">
+                      <button
+                        className="chat-btn"
+                        onClick={() => navigate(`/chat?partner=${partner._id}`)}
+                      >
+                        Chat
+                      </button>
+
+                      <button
+                        className="disconnect-btn"
+                        onClick={() => disconnectPartner(partner._id)}
+                      >
+                        Disconnect
+                      </button>
+                    </div>
+                  </div>
+                ))
               )}
             </div>
           </div>
         </div>
 
-        <button className="edit-btn" onClick={() => setShowModal(true)}>
+        <button
+          type="button"
+          className="edit-btn"
+          onClick={() => setShowModal(true)}
+        >
           Edit Profile
         </button>
+        <button
+          className="delete-btn"
+          onClick={async () => {
+            const ok = window.confirm(
+              "Are you sure you want to permanently delete your account?",
+            );
+
+            if (!ok) return;
+
+            try {
+              const res = await api.delete("/users/profile");
+
+              toast.success(res.data.message);
+
+              setAuthUser(null);
+            } catch (error) {
+              toast.error(
+                error.response?.data?.message || "Failed to delete account.",
+              );
+            }
+          }}
+        >
+          Delete Account
+        </button>
       </div>
+
       {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+        <div
+          className="modal-overlay"
+          onClick={() => {
+            if (!saving) {
+              setShowModal(false);
+            }
+          }}
+        >
           <div className="edit-modal" onClick={(e) => e.stopPropagation()}>
             <h2>Edit Profile</h2>
 
             <input
               name="name"
+              placeholder="Name"
               value={formData.name}
               onChange={handleChange}
-              placeholder="Name"
+              maxLength={50}
+              disabled={saving}
             />
 
             <input
               name="college"
+              placeholder="College"
               value={formData.college}
               onChange={handleChange}
-              placeholder="College"
+              maxLength={100}
+              disabled={saving}
             />
 
             <input
               name="course"
+              placeholder="Course"
               value={formData.course}
               onChange={handleChange}
-              placeholder="Course"
+              maxLength={100}
+              disabled={saving}
             />
 
             <input
               type="number"
               name="year"
+              placeholder="Year"
+              min="1"
+              max="6"
               value={formData.year}
               onChange={handleChange}
-              placeholder="Year"
+              disabled={saving}
             />
 
             <input
               type="number"
               name="dailyStudyTarget"
+              placeholder="Daily Target (hours)"
+              min="1"
+              max="24"
               value={formData.dailyStudyTarget}
               onChange={handleChange}
-              placeholder="Daily Target"
+              disabled={saving}
             />
 
             <input
               name="studyGoal"
+              placeholder="Study Goal"
               value={formData.studyGoal}
               onChange={handleChange}
-              placeholder="Study Goal"
+              maxLength={100}
+              disabled={saving}
             />
 
             <textarea
               rows="4"
               name="bio"
+              placeholder="Bio"
               value={formData.bio}
               onChange={handleChange}
-              placeholder="Bio"
+              maxLength={300}
+              disabled={saving}
+            />
+
+            <input
+              name="profilePicture"
+              placeholder="Profile Image URL"
+              value={formData.profilePicture || ""}
+              onChange={handleChange}
             />
 
             <div className="modal-buttons">
               <button
+                type="button"
                 className="cancel-btn"
                 onClick={() => setShowModal(false)}
+                disabled={saving}
               >
                 Cancel
               </button>
 
               <button
+                type="button"
                 className="save-btn"
                 onClick={saveProfile}
                 disabled={saving}

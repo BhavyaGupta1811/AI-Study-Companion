@@ -5,12 +5,15 @@ const getUserProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id)
       .select("-password")
-      .populate("accountabilityPartner", "name email role");
+      .populate(
+        "accountabilityPartners",
+        "name email role profilePicture partnerCode",
+      );
 
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "User not found",
+        message: "User not found.",
       });
     }
 
@@ -21,65 +24,121 @@ const getUserProfile = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message: "Failed to fetch profile.",
     });
   }
 };
 
+// Connect accountability partner
 const connectPartner = async (req, res) => {
   try {
-    const { partnerCode } = req.body;
+    const partnerCode = req.body.partnerCode?.trim().toUpperCase();
 
     if (!partnerCode) {
       return res.status(400).json({
         success: false,
-        message: "Partner code is required",
+        message: "Partner code is required.",
       });
     }
 
     const currentUser = await User.findById(req.user._id);
 
-    const partner = await User.findOne({
-      partnerCode: partnerCode.toUpperCase(),
-    });
+    if (!currentUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found.",
+      });
+    }
+
+    const partner = await User.findOne({ partnerCode });
 
     if (!partner) {
       return res.status(404).json({
         success: false,
-        message: "Partner not found",
+        message: "Partner not found.",
       });
     }
 
     if (partner._id.toString() === currentUser._id.toString()) {
       return res.status(400).json({
         success: false,
-        message: "You cannot connect with yourself",
+        message: "You cannot connect with yourself.",
       });
     }
 
-    currentUser.accountabilityPartner = partner._id;
+    if (
+      currentUser.accountabilityPartners.some(
+        (id) => id.toString() === partner._id.toString(),
+      )
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Partner is already connected.",
+      });
+    }
+
+    currentUser.accountabilityPartners.push(partner._id);
 
     await currentUser.save();
 
     await currentUser.populate(
-      "accountabilityPartner",
-      "name email profilePicture partnerCode",
+      "accountabilityPartners",
+      "name email role profilePicture partnerCode",
     );
 
     return res.status(200).json({
       success: true,
-      message: "Partner connected successfully",
+      message: "Partner connected successfully.",
       user: currentUser,
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message: "Failed to connect partner.",
     });
   }
 };
 
-// Update logged-in user's profile
+// Disconnect accountability partner
+const disconnectPartner = async (req, res) => {
+  try {
+    const { partnerId } = req.params;
+
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found.",
+      });
+    }
+
+    user.accountabilityPartners =
+      user.accountabilityPartners.filter(
+        (id) => id.toString() !== partnerId
+      );
+
+    await user.save();
+
+    await user.populate(
+      "accountabilityPartners",
+      "name email role profilePicture partnerCode"
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Partner disconnected successfully.",
+      user,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to disconnect partner.",
+    });
+  }
+};
+
+// Update profile
 const updateUserProfile = async (req, res) => {
   try {
     const allowedFields = [
@@ -91,7 +150,6 @@ const updateUserProfile = async (req, res) => {
       "year",
       "studyGoal",
       "dailyStudyTarget",
-      "accountabilityPartner",
     ];
 
     if (
@@ -100,7 +158,7 @@ const updateUserProfile = async (req, res) => {
     ) {
       return res.status(400).json({
         success: false,
-        message: "You cannot add yourself as accountability partner",
+        message: "You cannot add yourself as an accountability partner.",
       });
     }
 
@@ -112,14 +170,19 @@ const updateUserProfile = async (req, res) => {
       }
     });
 
-    
+    ["name", "bio", "college", "course", "studyGoal"].forEach((field) => {
+      if (typeof updates[field] === "string") {
+        updates[field] = updates[field].trim();
+      }
+    });
+
     if (updates.accountabilityPartner) {
       const partner = await User.findById(updates.accountabilityPartner);
 
       if (!partner) {
         return res.status(404).json({
           success: false,
-          message: "Accountability partner not found",
+          message: "Accountability partner not found.",
         });
       }
     }
@@ -129,30 +192,32 @@ const updateUserProfile = async (req, res) => {
       runValidators: true,
     })
       .select("-password")
-      .populate("accountabilityPartner", "name email role");
+      .populate(
+        "accountabilityPartners",
+        "name email role profilePicture partnerCode",
+      );
 
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "User not found",
+        message: "User not found.",
       });
     }
 
-
     return res.status(200).json({
       success: true,
-      message: "Profile updated successfully",
+      message: "Profile updated successfully.",
       user,
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message: "Failed to update profile.",
     });
   }
 };
 
-// Delete logged-in user's account
+// Delete account
 const deleteUserAccount = async (req, res) => {
   try {
     const user = await User.findByIdAndDelete(req.user._id);
@@ -160,30 +225,32 @@ const deleteUserAccount = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "User not found",
+        message: "User not found.",
       });
     }
 
     res.clearCookie("token", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     });
 
     return res.status(200).json({
       success: true,
-      message: "Account deleted successfully",
+      message: "Account deleted successfully.",
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message: "Failed to delete account.",
     });
   }
 };
+
 module.exports = {
   getUserProfile,
   updateUserProfile,
   deleteUserAccount,
   connectPartner,
+  disconnectPartner,
 };

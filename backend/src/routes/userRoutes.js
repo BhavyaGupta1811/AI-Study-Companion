@@ -8,6 +8,7 @@ const {
   updateUserProfile,
   deleteUserAccount,
   connectPartner,
+  disconnectPartner,
 } = require("../controllers/userController");
 
 const { updateProfileValidator } = require("../validators/userValidator");
@@ -25,6 +26,8 @@ router.put(
 );
 
 router.post("/connect-partner", protect, connectPartner);
+
+router.delete("/disconnect-partner/:partnerId", protect, disconnectPartner);
 
 router.delete("/profile", protect, deleteUserAccount);
 

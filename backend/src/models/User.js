@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const crypto = require("crypto");
+
 const userSchema = new mongoose.Schema(
   {
     name: {
@@ -30,11 +31,12 @@ const userSchema = new mongoose.Schema(
       default: "student",
     },
 
-    accountabilityPartner: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      default: null,
-    },
+    accountabilityPartners: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
 
     profilePicture: {
       type: String,
@@ -42,7 +44,6 @@ const userSchema = new mongoose.Schema(
         "https://ik.imagekit.io/2gnckpnjs/ffa31224f6efb03a7156cfea05b9e5ab.jpg",
     },
 
-    // User's short introduction
     bio: {
       type: String,
       default: "",
@@ -91,21 +92,38 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+
     partnerCode: {
       type: String,
       unique: true,
+      index: true,
     },
   },
   {
     timestamps: true,
   },
 );
-userSchema.pre("save", function (next) {
-  if (!this.partnerCode) {
-    this.partnerCode =
-      "FF-" + crypto.randomBytes(3).toString("hex").toUpperCase();
+
+userSchema.index({ email: 1 });
+
+userSchema.pre("save", async function (next) {
+  if (!this.isNew || this.partnerCode) {
+    return next();
+  }
+
+  let exists = true;
+
+  while (exists) {
+    const code = "FF-" + crypto.randomBytes(3).toString("hex").toUpperCase();
+
+    exists = await mongoose.models.User.exists({ partnerCode: code });
+
+    if (!exists) {
+      this.partnerCode = code;
+    }
   }
 
   next();
 });
+
 module.exports = mongoose.model("User", userSchema);

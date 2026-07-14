@@ -1,6 +1,6 @@
 .page {
   min-height: calc(100vh - 72px);
-  padding: 40px 8%;
+  padding: 40px;
   background: #0f172a;
   color: white;
 }

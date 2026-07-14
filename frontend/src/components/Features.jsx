@@ -8,23 +8,32 @@ function Features() {
       <h2>Why Choose FocusFlow?</h2>
 
       <div className="feature-container">
-        <div className="feature-card">
+        <article className="feature-card">
           <FaBookOpen className="feature-icon" />
+
           <h3>Study Tracking</h3>
-          <p>Track every study session and build consistency.</p>
-        </div>
 
-        <div className="feature-card">
+          <p>Track every study session and build long-term consistency.</p>
+        </article>
+
+        <article className="feature-card">
           <FaChartLine className="feature-icon" />
-          <h3>Dashboard</h3>
-          <p>Visualize your learning progress with useful statistics.</p>
-        </div>
 
-        <div className="feature-card">
+          <h3>Progress Dashboard</h3>
+
+          <p>Visualize your learning journey with detailed study statistics.</p>
+        </article>
+
+        <article className="feature-card">
           <FaComments className="feature-icon" />
-          <h3>Messaging</h3>
-          <p>Stay connected with your accountability partner.</p>
-        </div>
+
+          <h3>Partner Messaging</h3>
+
+          <p>
+            Stay connected with your accountability partner and remain
+            motivated.
+          </p>
+        </article>
       </div>
     </section>
   );

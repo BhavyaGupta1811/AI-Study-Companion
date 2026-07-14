@@ -3,7 +3,7 @@ import "../styles/Footer.css";
 function Footer() {
   return (
     <footer className="footer">
-      <p>© 2026 FocusFlow. All Rights Reserved.</p>
+      <p>© {new Date().getFullYear()} FocusFlow. All Rights Reserved.</p>
     </footer>
   );
 }

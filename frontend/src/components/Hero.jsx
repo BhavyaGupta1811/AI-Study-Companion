@@ -9,7 +9,8 @@ function Hero() {
     <section className="hero">
       <div className="hero-left">
         <span className="hero-tag">
-          <MdRocketLaunch /> Smart Study • Better Consistency
+          <MdRocketLaunch />
+          <span>Smart Study • Better Consistency</span>
         </span>
 
         <h1>
@@ -20,16 +21,17 @@ function Hero() {
 
         <p>
           FocusFlow helps students track study sessions, achieve daily goals,
-          and stay accountable with their study partners—all in one place.
+          stay accountable with their study partners, and build productive study
+          habits—all in one place.
         </p>
 
         <div className="hero-buttons">
-          <Link to="/register" className="primary-btn">
+          <Link to="/register" className="primary-btn" aria-label="Get Started">
             Get Started
             <FaArrowRight />
           </Link>
 
-          <Link to="/login" className="secondary-btn">
+          <Link to="/login" className="secondary-btn" aria-label="Login">
             Login
           </Link>
         </div>
@@ -37,9 +39,9 @@ function Hero() {
 
       <div className="hero-right">
         <div className="hero-card">
-          <h3>Today's Progress</h3>
+          <h2>Today's Progress</h2>
 
-          <div className="progress-circle">
+          <div className="progress-circle" aria-label="Today's study progress">
             <span>75%</span>
           </div>
 

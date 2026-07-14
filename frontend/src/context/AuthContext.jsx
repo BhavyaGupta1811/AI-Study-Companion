@@ -7,19 +7,32 @@ function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  async function getCurrentUser() {
-    try {
-      const response = await api.get("/auth/me");
-      setUser(response.data.user);
-    } catch (error) {
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
-  }
-
   useEffect(() => {
+    let isMounted = true;
+
+    async function getCurrentUser() {
+      try {
+        const response = await api.get("/auth/me");
+
+        if (isMounted) {
+          setUser(response.data.user);
+        }
+      } catch {
+        if (isMounted) {
+          setUser(null);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    }
+
     getCurrentUser();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   return (

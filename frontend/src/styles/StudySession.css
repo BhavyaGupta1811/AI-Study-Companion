@@ -1,0 +1,75 @@
+
+.live-session-card {
+  margin-bottom: 35px;
+  padding: 30px;
+  border-radius: 18px;
+  text-align: center;
+  background: linear-gradient(135deg, #1d4ed8, #4338ca);
+  color: white;
+  animation: pulseCard 2s infinite;
+}
+
+.live-session-card h2 {
+  margin-bottom: 18px;
+  font-size: 24px;
+}
+
+.live-time {
+  font-size: 52px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  margin-bottom: 12px;
+  font-family: monospace;
+}
+
+.live-session-card p {
+  opacity: 0.9;
+  font-size: 15px;
+}
+
+@media (max-width: 768px) {
+  .live-time {
+    font-size: 38px;
+  }
+}
+
+.quick-actions {
+  margin: 40px 0;
+}
+
+.quick-actions h2 {
+  color: white;
+  margin-bottom: 20px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 24px;
+  border: none;
+  border-radius: 14px;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.start-btn {
+  background: linear-gradient(135deg,#22c55e,#16a34a);
+}
+
+.end-btn {
+  background: linear-gradient(135deg,#ef4444,#dc2626);
+}
+
+.action-btn:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}

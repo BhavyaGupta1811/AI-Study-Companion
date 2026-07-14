@@ -1,25 +1,27 @@
 .sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
   width: 260px;
   height: 100vh;
-  position: fixed;
-  left: 0;
-  top: 0;
-  padding: 30px 22px;
-  background: #111827;
-  border-right: 1px solid #1f2937;
+  background: rgba(17, 24, 39, 0.96);
+  backdrop-filter: blur(18px);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 28px 20px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  z-index: 1000;
 }
 
 .sidebar-logo {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 45px;
   color: white;
   font-size: 26px;
   font-weight: 700;
+  margin-bottom: 45px;
 }
 
 .sidebar-logo svg {
@@ -37,38 +39,26 @@
   align-items: center;
   gap: 14px;
   padding: 14px 18px;
-  border-radius: 12px;
-  color: #94a3b8;
+  border-radius: 14px;
   text-decoration: none;
+  color: #94a3b8;
   transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.sidebar nav a svg {
+  font-size: 18px;
 }
 
 .sidebar nav a:hover {
-  background: #1e293b;
+  background: rgba(99, 102, 241, 0.15);
   color: white;
 }
 
 .sidebar nav .active {
   background: linear-gradient(135deg, #6366f1, #7c3aed);
   color: white;
-}
-
-.sidebar-logout {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 14px;
-  border: none;
-  border-radius: 12px;
-  background: #ef4444;
-  color: white;
-  cursor: pointer;
-  transition: 0.3s;
-}
-
-.sidebar-logout:hover {
-  background: #dc2626;
+  box-shadow: 0 12px 28px rgba(99, 102, 241, 0.3);
 }
 
 .sidebar-user {
@@ -76,14 +66,14 @@
   align-items: center;
   gap: 12px;
   padding: 14px;
-  margin-bottom: 16px;
-  border-radius: 14px;
+  margin-bottom: 18px;
+  border-radius: 16px;
   background: rgba(255, 255, 255, 0.05);
 }
 
 .sidebar-user img {
-  width: 48px;
-  height: 48px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid #6366f1;
@@ -92,7 +82,7 @@
 .sidebar-user h4 {
   color: white;
   font-size: 15px;
-  margin-bottom: 3px;
+  margin-bottom: 4px;
 }
 
 .sidebar-user p {
@@ -100,4 +90,138 @@
   font-size: 12px;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.sidebar-logout {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 14px;
+  background: #ef4444;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: 0.3s;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.sidebar-logout:hover {
+  background: #dc2626;
+}
+
+@media (max-width: 992px) {
+  .sidebar {
+    width: 220px;
+  }
+
+  .sidebar-logo span,
+  .sidebar-user div {
+    display: none;
+  }
+
+  .sidebar nav a {
+    justify-content: center;
+  }
+
+  .sidebar nav a svg {
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    display: none;
+  }
+}
+
+.sidebar {
+  transition: width 0.35s ease, transform 0.35s ease;
+}
+
+.sidebar.collapsed {
+  width: 90px;
+}
+
+.sidebar.collapsed nav a {
+  justify-content: center;
+}
+
+.sidebar.collapsed .sidebar-logo {
+  justify-content: center;
+}
+
+.sidebar.collapsed .sidebar-user {
+  display: none;
+}
+
+.sidebar-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 45px;
+}
+
+.collapse-btn {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.06);
+  color: white;
+  cursor: pointer;
+  transition: .3s;
+}
+
+.collapse-btn:hover {
+  background: #6366f1;
+}
+
+.sidebar-menu-btn {
+  display: none;
+}
+
+.sidebar-overlay {
+  display: none;
+}
+
+@media (max-width:768px){
+
+.sidebar{
+    transform:translateX(-100%);
+    width:260px;
+}
+
+.sidebar.open{
+    transform:translateX(0);
+}
+
+.sidebar-overlay{
+    display:block;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.45);
+    z-index:999;
+}
+
+.sidebar-menu-btn{
+    display:flex;
+    position:fixed;
+    top:20px;
+    left:20px;
+    width:48px;
+    height:48px;
+    border:none;
+    border-radius:12px;
+    background:#6366f1;
+    color:white;
+    justify-content:center;
+    align-items:center;
+    cursor:pointer;
+    z-index:1001;
+}
+
 }

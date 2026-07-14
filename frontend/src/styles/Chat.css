@@ -1,6 +1,6 @@
 .chat-page {
   min-height: calc(100vh - 72px);
-  padding: 40px 8%;
+  padding: 40px;
   background: #0f172a;
 }
 
@@ -199,4 +199,80 @@
 .delete-message:hover {
   color: #ef4444;
   background: #334155;
+}
+
+.chat-layout {
+  display: flex;
+  gap: 20px;
+}
+
+.partners-sidebar {
+  width: 250px;
+  background: rgba(30, 41, 59, 0.75);
+  border-radius: 18px;
+  padding: 20px;
+  border: 1px solid rgba(255,255,255,.08);
+  height: 78vh;
+}
+
+.partners-sidebar h3 {
+  color: white;
+  margin-bottom: 18px;
+}
+
+.partner-button,
+.partner-active {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: .25s;
+}
+
+.partner-button {
+  background: #1e293b;
+  color: white;
+}
+
+.partner-active {
+  background: #6366f1;
+  color: white;
+}
+
+.system-tag {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #facc15;
+  margin-bottom: 6px;
+}
+
+.system-message {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+
+.system-message .message-wrapper {
+  width: 100%;
+  justify-content: center;
+}
+
+.system-message .message-bubble {
+  max-width: 75%;
+  background: rgba(250, 204, 21, 0.12);
+  border: 1px solid rgba(250, 204, 21, 0.35);
+  color: #fde68a;
+  text-align: center;
+}
+
+.system-tag {
+  font-size: 12px;
+  font-weight: 700;
+  color: #facc15;
+  margin-bottom: 8px;
+  text-transform: uppercase;
 }

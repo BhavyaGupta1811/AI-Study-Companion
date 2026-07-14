@@ -1,17 +1,18 @@
 const errorHandler = (err, req, res, next) => {
   console.error(err);
 
-  res.status(err.statusCode || 500).json({
+  const statusCode = err.statusCode || res.statusCode;
+
+  res.status(statusCode !== 200 ? statusCode : 500).json({
     success: false,
     message: err.message || "Internal Server Error",
   });
 };
 
-const notFound = (req, res) => {
-  res.status(404).json({
-    success: false,
-    message: `Route ${req.originalUrl} not found`,
-  });
+const notFound = (req, res, next) => {
+  const error = new Error(`Route ${req.originalUrl} not found`);
+  error.statusCode = 404;
+  next(error);
 };
 
 module.exports = {

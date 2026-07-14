@@ -2,7 +2,7 @@ const Filter = require("bad-words");
 
 const filter = new Filter();
 
-const moderateMessage = (message) => {
+const moderateMessage = (message = "") => {
   const text = message.trim();
 
   if (!text) {
@@ -19,7 +19,6 @@ const moderateMessage = (message) => {
     };
   }
 
-  // Detect abusive words
   if (filter.isProfane(text)) {
     return {
       allowed: false,
@@ -27,7 +26,6 @@ const moderateMessage = (message) => {
     };
   }
 
-  // Spam detection
   if (/(.)\1{9,}/.test(text)) {
     return {
       allowed: false,
