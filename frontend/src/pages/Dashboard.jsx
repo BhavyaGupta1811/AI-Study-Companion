@@ -16,11 +16,14 @@ import { formatName } from "../utils/formatName";
 import "../styles/Dashboard.css";
 import "../styles/StudySession.css";
 import StudyReminder from "../components/StudyReminder";
+import { useNavigate } from "react-router-dom";
 
 function Dashboard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const [dashboard, setDashboard] = useState(null);
+  
   const [loading, setLoading] = useState(true);
   const [startingSession, setStartingSession] = useState(false);
   const [endingSession, setEndingSession] = useState(false);
@@ -28,8 +31,10 @@ function Dashboard() {
   const [activeSession, setActiveSession] = useState(null);
   const [elapsed, setElapsed] = useState(0);
   const [showReminder, setShowReminder] = useState(false);
+  const [studyDuration, setStudyDuration] = useState(25);
+  const [breakDuration, setBreakDuration] = useState(5);
+  const [warnings, setWarnings] = useState([]);
 
-  const lastActivity = useRef(Date.now());
   useEffect(() => {
     if (user) {
       getDashboard();
@@ -40,9 +45,11 @@ function Dashboard() {
     if (!activeSession) return;
 
     const interval = setInterval(() => {
-      const seconds = Math.floor(
-        (Date.now() - new Date(activeSession.startTime)) / 1000,
-      );
+      const baseTime = activeSession.onBreak
+        ? activeSession.breakStartedAt
+        : activeSession.currentStudyStartedAt;
+
+      const seconds = Math.floor((Date.now() - new Date(baseTime)) / 1000);
 
       setElapsed(seconds);
     }, 1000);
@@ -54,10 +61,13 @@ function Dashboard() {
     try {
       setLoading(true);
 
-      const [dashboardResponse, activeSessionResponse] = await Promise.all([
-        api.get("/dashboard"),
-        api.get("/study-sessions/active"),
-      ]);
+      const [dashboardResponse, activeSessionResponse, warningsResponse] =
+        await Promise.all([
+          api.get("/dashboard"),
+          api.get("/study-sessions/active"),
+          api.get("/messages/warnings"),
+        ]);
+      setWarnings(warningsResponse.data.warnings);
 
       setDashboard(dashboardResponse.data.dashboard);
 
@@ -74,18 +84,30 @@ function Dashboard() {
     }
   };
 
+  const refreshActiveSession = async () => {
+    try {
+      const response = await api.get("/study-sessions/active");
+
+      setActiveSession(response.data.session || null);
+
+      setSessionActive(!!response.data.session);
+    } catch {}
+  };
+
   const startStudySession = async () => {
     if (startingSession || sessionActive) return;
 
     try {
       setStartingSession(true);
 
-      const response = await api.post("/study-sessions/start");
+      const response = await api.post("/study-sessions/start", {
+        studyDuration,
+        breakDuration,
+      });
 
       toast.success(response.data.message);
 
       await getDashboard();
-      lastActivity.current = Date.now();
     } catch (error) {
       toast.error(error.response?.data?.message || "Unable to start session.");
     } finally {
@@ -105,7 +127,6 @@ function Dashboard() {
 
       await getDashboard();
       setShowReminder(false);
-      lastActivity.current = Date.now();
     } catch (error) {
       toast.error(error.response?.data?.message || "Unable to end session.");
     } finally {
@@ -122,7 +143,6 @@ function Dashboard() {
       );
 
       setShowReminder(false);
-      lastActivity.current = Date.now();
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to send warning.");
     }
@@ -139,48 +159,88 @@ function Dashboard() {
   }, []);
 
   const liveTimer = useMemo(() => {
-    const hrs = String(Math.floor(elapsed / 3600)).padStart(2, "0");
+    const totalSeconds =
+      (activeSession?.onBreak
+        ? activeSession.breakDuration
+        : activeSession?.studyDuration || 25) * 60;
 
-    const mins = String(Math.floor((elapsed % 3600) / 60)).padStart(2, "0");
+    const remaining = Math.max(0, totalSeconds - elapsed);
 
-    const secs = String(elapsed % 60).padStart(2, "0");
+    const hrs = String(Math.floor(remaining / 3600)).padStart(2, "0");
+
+    const mins = String(Math.floor((remaining % 3600) / 60)).padStart(2, "0");
+
+    const secs = String(remaining % 60).padStart(2, "0");
 
     return `${hrs}:${mins}:${secs}`;
-  }, [elapsed]);
+  }, [elapsed, activeSession]);
 
   useEffect(() => {
-    if (!sessionActive) return;
+    if ("Notification" in window) {
+      if (Notification.permission === "default") {
+        Notification.requestPermission();
+      }
+    }
+  }, []);
 
-    const updateActivity = () => {
-      lastActivity.current = Date.now();
-    };
-
-    window.addEventListener("mousemove", updateActivity);
-    window.addEventListener("keydown", updateActivity);
-    window.addEventListener("scroll", updateActivity);
-    window.addEventListener("click", updateActivity);
-
-    return () => {
-      window.removeEventListener("mousemove", updateActivity);
-      window.removeEventListener("keydown", updateActivity);
-      window.removeEventListener("scroll", updateActivity);
-      window.removeEventListener("click", updateActivity);
-    };
-  }, [sessionActive]);
+  
 
   useEffect(() => {
-    if (!sessionActive) return;
+    if (!activeSession) return;
 
     const interval = setInterval(() => {
-      const inactiveFor = Date.now() - lastActivity.current;
-
-      if (inactiveFor > 60000 && !showReminder) {
-        setShowReminder(true);
-      }
-    }, 10000);
+      refreshActiveSession();
+    }, 5000);
 
     return () => clearInterval(interval);
-  }, [sessionActive, showReminder]);
+  }, [activeSession]);
+
+  useEffect(() => {
+    if (!activeSession || !activeSession.onBreak) {
+      setShowReminder(false);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      const breakMinutes = Math.floor(
+        (Date.now() - new Date(activeSession.breakStartedAt)) / (1000 * 60),
+      );
+
+      if (breakMinutes >= activeSession.breakDuration) {
+        setShowReminder(true);
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [activeSession]);
+
+  const previousBreakState = useRef(false);
+
+  useEffect(() => {
+    if (!activeSession) return;
+
+    if (activeSession.onBreak && previousBreakState.current === false) {
+      toast.info("☕ Time for a break!");
+
+      if ("Notification" in window && Notification.permission === "granted") {
+        new Notification("FocusFlow", {
+          body: "Time for a break ☕",
+        });
+      }
+    }
+
+    if (!activeSession.onBreak && previousBreakState.current === true) {
+      toast.success("📚 Break over!");
+
+      if ("Notification" in window && Notification.permission === "granted") {
+        new Notification("FocusFlow", {
+          body: "Break over! Time to study.",
+        });
+      }
+    }
+
+    previousBreakState.current = activeSession.onBreak;
+  }, [activeSession]);
 
   if (loading || !dashboard) {
     return (
@@ -295,11 +355,55 @@ function Dashboard() {
 
       {sessionActive && activeSession && (
         <div className="live-session-card">
-          <h2>🟢 Study Session Running</h2>
+          <h2>
+            {activeSession.onBreak
+              ? "☕ Break Time"
+              : "🟢 Study Session Running"}
+          </h2>
 
           <div className="live-time">{liveTimer}</div>
 
-          <p>Stay focused. Every minute counts.</p>
+          <p>
+            Study {activeSession.studyDuration} min • Break{" "}
+            {activeSession.breakDuration} min
+          </p>
+
+          <p>
+            {activeSession.onBreak
+              ? "Relax for a while. Resume studying when your break ends."
+              : "Stay focused. Every minute counts."}
+          </p>
+        </div>
+      )}
+      {!sessionActive && (
+        <div className="pomodoro-card">
+          <h2>Pomodoro Settings</h2>
+
+          <div className="pomodoro-inputs">
+            <div>
+              <label>Study (minutes)</label>
+
+              <input
+                type="number"
+                min="15"
+                max="180"
+                value={studyDuration}
+                onChange={(e) => setStudyDuration(Number(e.target.value))}
+              />
+            </div>
+
+            <div>
+              <label>Break (minutes)</label>
+
+              <input
+                type="number"
+                min="1"
+                max="60"
+                value={breakDuration}
+                onChange={(e) => setBreakDuration(Number(e.target.value))}
+              />
+            </div>
+          </div>
         </div>
       )}
 
@@ -356,14 +460,55 @@ function Dashboard() {
           </div>
         )}
       </div>
+
+      <div className="recent-section">
+        <h2>Accountability Alerts</h2>
+
+        {warnings.length === 0 ? (
+          <div className="empty-card">
+            <p>No alerts received.</p>
+          </div>
+        ) : (
+          <div className="session-list">
+            {warnings.map((warning) => (
+              <div className="session-card" key={warning._id}>
+                <div>
+                  <h3>{warning.sender.name}</h3>
+                  <p>{warning.text}</p>
+                </div>
+
+                <button
+                  className="action-btn"
+                  onClick={() => {
+                    setWarnings((prev) =>
+                      prev.filter((w) => w._id !== warning._id),
+                    );
+
+                    navigate(`/chat?partner=${warning.sender._id}`);
+                  }}
+                >
+                  Open Chat
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
       <StudyReminder
         open={showReminder}
-        onContinue={() => {
-          lastActivity.current = Date.now();
+        onContinue={async () => {
           setShowReminder(false);
+
+          try {
+            await api.post("/study-sessions/continue");
+            await refreshActiveSession();
+          } catch (error) {
+            console.error(error);
+          }
         }}
         onEnd={async () => {
           await endStudySession();
+          await getDashboard();
           setShowReminder(false);
         }}
         onTimeout={sendWarning}

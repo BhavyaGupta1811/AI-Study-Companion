@@ -9,9 +9,10 @@ import {
   FaBolt,
   FaBars,
   FaTimes,
+  FaQuestionCircle,
 } from "react-icons/fa";
 import { toast } from "react-toastify";
-
+import { useRef } from "react";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { formatName } from "../utils/formatName";
@@ -24,6 +25,8 @@ function Sidebar() {
 
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [totalUnread, setTotalUnread] = useState(0);
+  const previousUnread = useRef(0);
 
   useEffect(() => {
     const close = () => {
@@ -35,6 +38,16 @@ function Sidebar() {
     window.addEventListener("resize", close);
 
     return () => window.removeEventListener("resize", close);
+  }, []);
+
+  useEffect(() => {
+    loadUnreadCount();
+
+    const interval = setInterval(() => {
+      loadUnreadCount();
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
   async function handleLogout() {
@@ -50,6 +63,22 @@ function Sidebar() {
       toast.error(error.response?.data?.message || "Logout failed");
     }
   }
+
+  const loadUnreadCount = async () => {
+    try {
+      const response = await api.get("/messages/unread");
+
+      const current = response.data.totalUnread;
+
+      if (previousUnread.current !== 0 && current > previousUnread.current) {
+        toast.info("You have a new message");
+      }
+
+      previousUnread.current = current;
+
+      setTotalUnread(current);
+    } catch {}
+  };
 
   return (
     <>
@@ -98,8 +127,17 @@ function Sidebar() {
               {!collapsed && <span>Study</span>}
             </NavLink>
 
-            <NavLink to="/chat">
-              <FaComments />
+            <NavLink to="/chat" className="chat-nav-link">
+              <div className="chat-icon-wrapper">
+                <FaComments />
+
+                {totalUnread > 0 && (
+                  <span className="sidebar-chat-badge">
+                    {totalUnread > 99 ? "99+" : totalUnread}
+                  </span>
+                )}
+              </div>
+
               {!collapsed && <span>Chat</span>}
             </NavLink>
 
@@ -110,6 +148,12 @@ function Sidebar() {
           </nav>
         </div>
 
+        <NavLink to="/guide">
+          <FaQuestionCircle />
+
+          {!collapsed && <span>Guide</span>}
+        </NavLink>
+        
         <div>
           {!collapsed && (
             <div className="sidebar-user">

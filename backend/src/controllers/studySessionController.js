@@ -4,6 +4,9 @@ const Message = require("../models/Message");
 // Start a new study session
 const startStudySession = async (req, res) => {
   try {
+    const studyDuration = Number(req.body.studyDuration) || 25;
+    const breakDuration = Number(req.body.breakDuration) || 5;
+
     const existingSession = await StudySession.findOne({
       user: req.user._id,
       status: "active",
@@ -16,8 +19,14 @@ const startStudySession = async (req, res) => {
       });
     }
 
+    const now = new Date();
+
     const session = await StudySession.create({
       user: req.user._id,
+      studyDuration,
+      breakDuration,
+      startTime: now,
+      currentStudyStartedAt: now,
     });
 
     return res.status(201).json({
@@ -139,7 +148,7 @@ const getActiveStudySession = async (req, res) => {
     const session = await StudySession.findOne({
       user: req.user._id,
       status: "active",
-    }).lean();
+    });
 
     if (!session) {
       return res.status(200).json({
@@ -148,10 +157,39 @@ const getActiveStudySession = async (req, res) => {
       });
     }
 
-    return res.status(200).json({
-      success: true,
-      session,
-    });
+    const now = new Date();
+
+    if (!session.onBreak) {
+      const studyMinutes = Math.floor(
+        (now - session.currentStudyStartedAt) / (1000 * 60),
+      );
+
+      if (studyMinutes >= session.studyDuration) {
+        session.onBreak = true;
+        session.breakReminderCount = 0;
+
+        session.lastBreakReminderAt = null;
+        session.breakStartedAt = now;
+
+        await session.save();
+      }
+    } else {
+      const breakMinutes = Math.floor(
+        (now - session.breakStartedAt) / (1000 * 60),
+      );
+      if (breakMinutes >= session.breakDuration) {
+        // Break has ended.
+        // Keep the session in break mode.
+        // Frontend will show reminder popup.
+        // Study resumes only when user clicks "Continue Studying".
+      }
+
+    }
+
+   return res.status(200).json({
+     success: true,
+     session,
+   });
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -175,12 +213,25 @@ const handleStudyReminder = async (req, res) => {
       });
     }
 
-    session.reminderCount += 1;
+    const now = new Date();
+
+    if (
+      session.lastBreakReminderAt &&
+      now - session.lastBreakReminderAt < 5 * 60 * 1000
+    ) {
+      return res.status(200).json({
+        success: true,
+        breakReminderCount: session.breakReminderCount,
+      });
+    }
+
+    session.breakReminderCount += 1;
+    session.lastBreakReminderAt = now;
 
     const reminderLimit = 3;
 
     if (
-      session.reminderCount >= reminderLimit &&
+      session.breakReminderCount >= reminderLimit &&
       !session.partnerAlertSent
     ) {
       const user = await User.findById(req.user._id);
@@ -204,7 +255,7 @@ const handleStudyReminder = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Reminder handled.",
-      reminderCount: session.reminderCount,
+      breakReminderCount: session.breakReminderCount,
     });
   } catch (error) {
     return res.status(500).json({
@@ -325,6 +376,47 @@ const getStudyAnalytics = async (req, res) => {
     });
   }
 };
+
+const continueStudying = async (req, res) => {
+  try {
+    const session = await StudySession.findOne({
+      user: req.user._id,
+      status: "active",
+    });
+
+    if (!session) {
+      return res.status(404).json({
+        success: false,
+        message: "No active session.",
+      });
+    }
+
+    session.onBreak = false;
+
+    session.breakStartedAt = null;
+
+    session.currentStudyStartedAt = new Date();
+
+    session.breakReminderCount = 0;
+
+    session.lastBreakReminderAt = null;
+
+    session.partnerAlertSent = false;
+
+    await session.save();
+
+    return res.json({
+      success: true,
+      message: "Activity updated.",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update activity.",
+    });
+  }
+};
+
 module.exports = {
   startStudySession,
   endStudySession,
@@ -333,4 +425,5 @@ module.exports = {
   getActiveStudySession,
   getStudyAnalytics,
   handleStudyReminder,
+  continueStudying,
 };

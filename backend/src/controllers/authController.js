@@ -98,6 +98,13 @@ const register = async (req, res) => {
       },
     });
   } catch (error) {
+    console.error(error);
+    if (error.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: "Email already exists.",
+      });
+    }
     return res.status(500).json({
       success: false,
       message: "Registration failed.",
@@ -111,7 +118,9 @@ const login = async (req, res) => {
 
     email = email.toLowerCase().trim();
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({
+      email,
+    }).select("+password");;
 
     if (!user) {
       return res.status(401).json({
@@ -159,6 +168,7 @@ const login = async (req, res) => {
       },
     });
   } catch (error) {
+    console.error(error);
     return res.status(500).json({
       success: false,
       message: "Login failed.",

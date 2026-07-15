@@ -176,17 +176,6 @@ const updateUserProfile = async (req, res) => {
       }
     });
 
-    if (updates.accountabilityPartner) {
-      const partner = await User.findById(updates.accountabilityPartner);
-
-      if (!partner) {
-        return res.status(404).json({
-          success: false,
-          message: "Accountability partner not found.",
-        });
-      }
-    }
-
     const user = await User.findByIdAndUpdate(req.user._id, updates, {
       new: true,
       runValidators: true,

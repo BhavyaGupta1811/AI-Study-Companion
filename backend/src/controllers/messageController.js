@@ -135,6 +135,19 @@ const getMessages = async (req, res) => {
       ],
     };
 
+    await Message.updateMany(
+      {
+        sender: partnerId,
+        receiver: req.user._id,
+        isRead: false,
+      },
+      {
+        $set: {
+          isRead: true,
+        },
+      },
+    );
+
     const messages = await Message.find(query)
       .populate("sender", "name profilePicture role")
       .populate("receiver", "name profilePicture role")
@@ -172,6 +185,13 @@ const removeMessage = async (req, res) => {
       });
     }
 
+    if (message.systemMessage) {
+      return res.status(403).json({
+        success: false,
+        message: "System messages cannot be deleted.",
+      });
+    }
+
     if (message.sender.toString() !== req.user._id.toString()) {
       return res.status(403).json({
         success: false,
@@ -193,8 +213,80 @@ const removeMessage = async (req, res) => {
   }
 };
 
+const getWarnings = async (req, res) => {
+  try {
+    const warnings = await Message.find({
+      receiver: req.user._id,
+      systemMessage: true,
+      isRead: false,
+    })
+      .populate("sender", "name profilePicture")
+      .sort({ createdAt: -1 })
+      .limit(10);
+
+    await Message.updateMany(
+      {
+        receiver: req.user._id,
+        systemMessage: true,
+        isRead: false,
+      },
+      {
+        $set: {
+          isRead: true,
+        },
+      },
+    );
+
+    return res.json({
+      success: true,
+      warnings,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to load warnings.",
+    });
+  }
+};
+
+const getUnreadCounts = async (req, res) => {
+  try {
+    const unread = await Message.aggregate([
+      {
+        $match: {
+          receiver: req.user._id,
+          isRead: false,
+        },
+      },
+      {
+        $group: {
+          _id: "$sender",
+          count: {
+            $sum: 1,
+          },
+        },
+      },
+    ]);
+
+    const totalUnread = unread.reduce((sum, partner) => sum + partner.count, 0);
+
+    return res.json({
+      success: true,
+      unread,
+      totalUnread,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to load unread counts.",
+    });
+  }
+};
+
 module.exports = {
   sendMessage,
   getMessages,
   removeMessage,
+  getWarnings,
+  getUnreadCounts,
 };

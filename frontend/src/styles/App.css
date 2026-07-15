@@ -4,9 +4,10 @@ padding:0;
 box-sizing:border-box;
 }
 
-body{
-background:#0f172a;
-overflow-x:hidden;
+body {
+  background:#0f172a;
+  overflow-x:hidden;
+  font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
 }
 
 #root{

@@ -26,6 +26,7 @@ function Profile() {
   const [formData, setFormData] = useState({
     name: "",
     bio: "",
+    profilePicture: "",
     college: "",
     course: "",
     year: "",
@@ -57,6 +58,7 @@ function Profile() {
         studyGoal: profile.studyGoal || "",
         dailyStudyTarget: profile.dailyStudyTarget || "",
         accountabilityPartners: profile.accountabilityPartners || [],
+        profilePicture: profile.profilePicture || "",
       });
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to load profile.");
@@ -124,6 +126,7 @@ function Profile() {
         studyGoal: updatedUser.studyGoal || "",
         dailyStudyTarget: updatedUser.dailyStudyTarget || "",
         accountabilityPartners: updatedUser.accountabilityPartners || [],
+        profilePicture: updatedUser.profilePicture || "",
       });
 
       toast.success(response.data.message);

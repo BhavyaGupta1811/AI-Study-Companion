@@ -13,7 +13,7 @@ import Sidebar from "./components/Sidebar";
 import ProtectedRoute from "./components/ProtectedRoute";
 import StudyReminder from "./components/StudyReminder";
 import { useAuth } from "./context/AuthContext";
-
+import Guide from "./pages/Guide";
 import "./styles/App.css";
 
 function App() {
@@ -33,6 +33,8 @@ function App() {
         <Routes>
           {/* Public */}
           <Route path="/" element={<Home />} />
+
+          <Route path="/guide" element={<Guide />} />
 
           <Route
             path="/login"

@@ -95,3 +95,70 @@ frontend/
 ├── README.md
 ├── vite.config.js
 └── Project_Folder_Structure.txt
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+frontend/
+├── node_modules/
+├── public/
+├── src/
+│   ├── components/
+│   │   ├── Features.jsx
+│   │   ├── Footer.jsx
+│   │   ├── Hero.jsx
+│   │   ├── Navbar.jsx
+│   │   └── Sidebar.jsx
+│   │
+│   ├── pages/
+│   │   ├── Home.jsx
+│   │
+│   ├── styles/
+│   │   ├── App.css
+│   │   ├── Auth.css
+│   │   ├── Chat.css
+│   │   ├── Dashboard.css
+│   │   ├── Features.css
+│   │   ├── Footer.css
+│   │   ├── Hero.css
+│   │   ├── Navbar.css
+│   │   ├── Page.css
+│   │   ├── Profile.css
+│   │   ├── Sidebar.css
+│   │   ├── StudySession.css
+│   │   └── Study.css
+│   │
+│   ├── utils/
+│   │   └── formatName.js
+
+│   ├── index.css
+
+├── .gitignore
+├── eslint.config.js

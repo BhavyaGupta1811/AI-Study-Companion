@@ -21,7 +21,6 @@ function Study() {
 
   const [showReminder, setShowReminder] = useState(false);
 
-  const lastActivity = useRef(Date.now());
   const [elapsed, setElapsed] = useState(0);
   const [loading, setLoading] = useState(true);
 
@@ -34,12 +33,35 @@ function Study() {
     activeSessions: 0,
   });
 
+  const [studyDuration, setStudyDuration] = useState(25);
+  const [breakDuration, setBreakDuration] = useState(5);
+
+  useEffect(() => {
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, []);
+
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
 
   useEffect(() => {
     loadStudyData();
   }, []);
+
+  const refreshActiveSession = async () => {
+    try {
+      const response = await api.get("/study-sessions/active");
+
+      const session = response.data.session || null;
+
+      setActiveSession(session);
+
+      if (!session) {
+        setShowReminder(false);
+      }
+    } catch {}
+  };
 
   useEffect(() => {
     if (!activeSession) {
@@ -48,9 +70,11 @@ function Study() {
     }
 
     const interval = setInterval(() => {
-      const seconds = Math.floor(
-        (Date.now() - new Date(activeSession.startTime)) / 1000,
-      );
+      const baseTime = activeSession.onBreak
+        ? activeSession.breakStartedAt
+        : activeSession.currentStudyStartedAt;
+
+      const seconds = Math.floor((Date.now() - new Date(baseTime)) / 1000);
 
       setElapsed(seconds);
     }, 1000);
@@ -75,10 +99,6 @@ function Study() {
       setAnalytics(analyticsResponse.data.analytics);
 
       setActiveSession(activeSessionResponse.data.session || null);
-
-      if (activeSessionResponse.data.session) {
-        lastActivity.current = Date.now();
-      }
 
       const completed = allSessions.filter(
         (session) => session.status === "completed",
@@ -113,11 +133,14 @@ function Study() {
     try {
       setStartingSession(true);
 
-      const response = await api.post("/study-sessions/start");
+      const response = await api.post("/study-sessions/start", {
+        studyDuration,
+        breakDuration,
+      });
 
       toast.success(response.data.message);
 
-      lastActivity.current = Date.now();
+      setShowReminder(false);
 
       await loadStudyData();
     } catch (error) {
@@ -136,7 +159,7 @@ function Study() {
       const response = await api.post("/study-sessions/end");
 
       toast.success(response.data.message);
-
+      setShowReminder(false);
       await loadStudyData();
     } catch (error) {
       toast.error(error.response?.data?.message || "Unable to end session");
@@ -158,47 +181,77 @@ function Study() {
   });
 
   const liveTimer = useMemo(() => {
-    const hrs = String(Math.floor(elapsed / 3600)).padStart(2, "0");
+    if (!activeSession) return "00:00:00";
 
-    const mins = String(Math.floor((elapsed % 3600) / 60)).padStart(2, "0");
+    const totalSeconds =
+      (activeSession.onBreak
+        ? activeSession.breakDuration
+        : activeSession.studyDuration) * 60;
 
-    const secs = String(elapsed % 60).padStart(2, "0");
+    const remaining = Math.max(0, totalSeconds - elapsed);
+
+    const hrs = String(Math.floor(remaining / 3600)).padStart(2, "0");
+    const mins = String(Math.floor((remaining % 3600) / 60)).padStart(2, "0");
+    const secs = String(remaining % 60).padStart(2, "0");
 
     return `${hrs}:${mins}:${secs}`;
-  }, [elapsed]);
+  }, [activeSession, elapsed]);
 
   useEffect(() => {
     if (!activeSession) return;
 
-    const updateActivity = () => {
-      lastActivity.current = Date.now();
-    };
+    const interval = setInterval(async () => {
+      await refreshActiveSession();
+    }, 5000);
 
-    window.addEventListener("mousemove", updateActivity);
-    window.addEventListener("keydown", updateActivity);
-    window.addEventListener("scroll", updateActivity);
-    window.addEventListener("click", updateActivity);
+    return () => clearInterval(interval);
+  }, [activeSession]);
 
-    return () => {
-      window.removeEventListener("mousemove", updateActivity);
-      window.removeEventListener("keydown", updateActivity);
-      window.removeEventListener("scroll", updateActivity);
-      window.removeEventListener("click", updateActivity);
-    };
+  const previousBreakState = useRef(false);
+
+  useEffect(() => {
+    if (!activeSession || !activeSession.onBreak) {
+      setShowReminder(false);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      const breakMinutes = Math.floor(
+        (Date.now() - new Date(activeSession.breakStartedAt)) / (1000 * 60),
+      );
+
+      if (breakMinutes >= activeSession.breakDuration) {
+        setShowReminder(true);
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, [activeSession]);
 
   useEffect(() => {
     if (!activeSession) return;
 
-    const interval = setInterval(() => {
-      const inactiveFor = Date.now() - lastActivity.current;
+    if (activeSession.onBreak && !previousBreakState.current) {
+      toast.info("☕ Time for a break!");
 
-      if (inactiveFor > 60000 && !showReminder) {
-        setShowReminder(true);
+      if (Notification.permission === "granted") {
+        new Notification("FocusFlow", {
+          body: "Time for a break ☕",
+        });
       }
-    }, 10000);
+    }
 
-    return () => clearInterval(interval);
+    if (!activeSession.onBreak && previousBreakState.current) {
+      toast.success("📚 Break over!");
+
+      if (Notification.permission === "granted") {
+        new Notification("FocusFlow", {
+          body: "Break over! Time to study.",
+        });
+      }
+    }
+
+    previousBreakState.current = activeSession.onBreak;
   }, [activeSession]);
 
   if (loading) {
@@ -216,9 +269,8 @@ function Study() {
       toast.warning(response.data.message);
 
       setShowReminder(false);
-      lastActivity.current = Date.now();
 
-      // If session ended on backend later
+      await refreshActiveSession();
       await loadStudyData();
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to send reminder.");
@@ -283,13 +335,51 @@ function Study() {
 
       {activeSession && (
         <div className="live-session-card">
-          <h2>🟢 Study Session Running</h2>
+          <h2>
+            {activeSession.onBreak
+              ? "☕ Break Time"
+              : "🟢 Study Session Running"}
+          </h2>
 
           <div className="live-time">{liveTimer}</div>
 
-          <p>Stay focused. Every minute counts.</p>
+          <p>
+            {activeSession.onBreak
+              ? "Take your break. Resume studying when you're ready."
+              : "Stay focused. Every minute counts."}
+          </p>
         </div>
       )}
+
+      <div className="pomodoro-card">
+        <h2>Pomodoro Settings</h2>
+
+        <div className="pomodoro-inputs">
+          <div>
+            <label>Study (minutes)</label>
+
+            <input
+              type="number"
+              min="15"
+              max="180"
+              value={studyDuration}
+              onChange={(e) => setStudyDuration(Number(e.target.value))}
+            />
+          </div>
+
+          <div>
+            <label>Break (minutes)</label>
+
+            <input
+              type="number"
+              min="1"
+              max="60"
+              value={breakDuration}
+              onChange={(e) => setBreakDuration(Number(e.target.value))}
+            />
+          </div>
+        </div>
+      </div>
 
       <div className="quick-actions">
         <h2>Study Controls</h2>
@@ -378,9 +468,18 @@ function Study() {
       )}
       <StudyReminder
         open={showReminder}
-        onContinue={() => {
-          lastActivity.current = Date.now();
+        onContinue={async () => {
           setShowReminder(false);
+
+          try {
+            await api.post("/study-sessions/continue");
+
+            await refreshActiveSession();
+          } catch (error) {
+            toast.error(
+              error.response?.data?.message || "Unable to continue studying",
+            );
+          }
         }}
         onEnd={endStudySession}
         onTimeout={sendWarning}

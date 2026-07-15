@@ -22,6 +22,7 @@ function Chat() {
 
   const [searchParams] = useSearchParams();
 
+  const [unreadCounts, setUnreadCounts] = useState({});
   const partnerId = searchParams.get("partner");
 
   const bottomRef = useRef(null);
@@ -30,15 +31,18 @@ function Chat() {
     if (!user) return;
 
     loadPartners();
+    loadUnreadCounts();
   }, [user]);
 
   useEffect(() => {
     if (!partner) return;
 
     getMessages();
+    loadUnreadCounts();
 
     const interval = setInterval(() => {
       getMessages(true);
+      loadUnreadCounts();
     }, 3000);
 
     return () => clearInterval(interval);
@@ -122,7 +126,10 @@ function Chat() {
 
       setText("");
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to send message.");
+      const message =
+        error.response?.data?.message || "Failed to send message.";
+
+      toast.warning(message);
     } finally {
       setSending(false);
     }
@@ -138,6 +145,20 @@ function Chat() {
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to delete message.");
     }
+  };
+
+  const loadUnreadCounts = async () => {
+    try {
+      const response = await api.get("/messages/unread");
+
+      const counts = {};
+
+      response.data.unread.forEach((item) => {
+        counts[item._id] = item.count;
+      });
+
+      setUnreadCounts(counts);
+    } catch {}
   };
 
   return (
@@ -157,7 +178,13 @@ function Chat() {
                 }
                 onClick={() => setPartner(p)}
               >
-                {p.name}
+                <>
+                  <span>{p.name}</span>
+
+                  {unreadCounts[p._id] > 0 && (
+                    <span className="chat-badge">{unreadCounts[p._id]}</span>
+                  )}
+                </>
               </button>
             ))
           )}
@@ -171,6 +198,10 @@ function Chat() {
                   src={partner.profilePicture}
                   alt={partner.name}
                   className="partner-image"
+                  onError={(e) => {
+                    e.target.src =
+                      "https://ik.imagekit.io/2gnckpnjs/ffa31224f6efb03a7156cfea05b9e5ab.jpg";
+                  }}
                 />
 
                 <div>
@@ -262,7 +293,12 @@ function Chat() {
               }}
             />
 
-            <button onClick={sendMessage} disabled={sending || !partner}>
+            <div className="chat-counter">{text.length}/500</div>
+
+            <button
+              onClick={sendMessage}
+              disabled={sending || !partner || !text.trim()}
+            >
               {sending ? "..." : <FaPaperPlane />}
             </button>
           </div>

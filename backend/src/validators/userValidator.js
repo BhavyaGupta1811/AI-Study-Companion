@@ -42,11 +42,6 @@ const updateProfileValidator = [
     .withMessage("Daily study target must be between 1 and 24"),
 
   body("profilePicture").optional().trim(),
-
-  body("accountabilityPartner")
-    .optional()
-    .isMongoId()
-    .withMessage("Invalid accountability partner ID"),
 ];
 
 module.exports = {

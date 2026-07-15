@@ -10,6 +10,7 @@ const {
   getActiveStudySession,
   getStudyAnalytics,
   handleStudyReminder,
+  continueStudying,
 } = require("../controllers/studySessionController");
 
 const router = express.Router();
@@ -27,5 +28,7 @@ router.post("/start", protect, startStudySession);
 router.post("/end", protect, endStudySession);
 
 router.post("/reminder", protect, handleStudyReminder);
+
+router.post("/continue", protect, continueStudying);
 
 module.exports = router;

@@ -1,36 +1,82 @@
-
 .live-session-card {
   margin-bottom: 35px;
   padding: 30px;
   border-radius: 18px;
-  text-align: center;
   background: linear-gradient(135deg, #1d4ed8, #4338ca);
-  color: white;
+  color: #fff;
+  text-align: center;
   animation: pulseCard 2s infinite;
 }
 
 .live-session-card h2 {
   margin-bottom: 18px;
   font-size: 24px;
-}
-
-.live-time {
-  font-size: 52px;
   font-weight: 700;
-  letter-spacing: 3px;
-  margin-bottom: 12px;
-  font-family: monospace;
 }
 
 .live-session-card p {
-  opacity: 0.9;
+  color: rgba(255, 255, 255, 0.9);
   font-size: 15px;
+  line-height: 1.7;
 }
 
-@media (max-width: 768px) {
-  .live-time {
-    font-size: 38px;
-  }
+.live-time {
+  margin-bottom: 12px;
+  color: #fff;
+  font-family: monospace;
+  font-size: 52px;
+  font-weight: 700;
+  letter-spacing: 3px;
+}
+
+.pomodoro-card {
+  margin-bottom: 30px;
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  background: rgba(30, 41, 59, 0.75);
+  backdrop-filter: blur(18px);
+}
+
+.pomodoro-card h2 {
+  margin-bottom: 18px;
+  color: #fff;
+  font-size: 22px;
+}
+
+.pomodoro-inputs {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.pomodoro-inputs div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pomodoro-inputs label {
+  color: #94a3b8;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.pomodoro-inputs input {
+  width: 120px;
+  padding: 12px;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  background: #0f172a;
+  color: #fff;
+  font-size: 15px;
+  transition: all 0.3s ease;
+}
+
+.pomodoro-inputs input:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.2);
 }
 
 .quick-actions {
@@ -38,8 +84,9 @@
 }
 
 .quick-actions h2 {
-  color: white;
   margin-bottom: 20px;
+  color: #fff;
+  font-size: 22px;
 }
 
 .action-buttons {
@@ -51,25 +98,87 @@
 .action-btn {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 12px;
+  min-width: 190px;
   padding: 16px 24px;
   border: none;
   border-radius: 14px;
-  color: white;
+  color: #fff;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.action-btn:hover:not(:disabled) {
+  transform: translateY(-3px);
 }
 
 .start-btn {
-  background: linear-gradient(135deg,#22c55e,#16a34a);
+  background: linear-gradient(135deg, #22c55e, #16a34a);
 }
 
 .end-btn {
-  background: linear-gradient(135deg,#ef4444,#dc2626);
+  background: linear-gradient(135deg, #ef4444, #dc2626);
 }
 
 .action-btn:disabled {
-  opacity: .5;
+  opacity: 0.6;
   cursor: not-allowed;
+  transform: none;
+}
+
+@media (max-width: 768px) {
+  .live-session-card {
+    padding: 24px;
+  }
+
+  .live-session-card h2 {
+    font-size: 22px;
+  }
+
+  .live-time {
+    font-size: 38px;
+    letter-spacing: 2px;
+  }
+
+  .pomodoro-inputs {
+    flex-direction: column;
+  }
+
+  .pomodoro-inputs input {
+    width: 100%;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+  }
+
+  .action-btn {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .live-session-card {
+    padding: 20px;
+  }
+
+  .live-session-card h2 {
+    font-size: 20px;
+  }
+
+  .live-time {
+    font-size: 30px;
+  }
+
+  .pomodoro-card {
+    padding: 18px;
+  }
+
+  .quick-actions {
+    margin: 30px 0;
+  }
 }

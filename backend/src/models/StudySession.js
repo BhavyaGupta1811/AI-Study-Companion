@@ -14,6 +14,11 @@ const studySessionSchema = new mongoose.Schema(
       required: true,
     },
 
+    currentStudyStartedAt: {
+      type: Date,
+      default: Date.now,
+    },
+
     endTime: {
       type: Date,
       default: null,
@@ -30,14 +35,37 @@ const studySessionSchema = new mongoose.Schema(
       default: "active",
     },
 
-    reminderCount: {
+    partnerAlertSent: {
+      type: Boolean,
+      default: false,
+    },
+    studyDuration: {
+      type: Number,
+      default: 25,
+    },
+
+    breakDuration: {
+      type: Number,
+      default: 5,
+    },
+
+    onBreak: {
+      type: Boolean,
+      default: false,
+    },
+
+    breakStartedAt: {
+      type: Date,
+      default: null,
+    },
+    breakReminderCount: {
       type: Number,
       default: 0,
     },
 
-    partnerAlertSent: {
-      type: Boolean,
-      default: false,
+    lastBreakReminderAt: {
+      type: Date,
+      default: null,
     },
   },
   {
